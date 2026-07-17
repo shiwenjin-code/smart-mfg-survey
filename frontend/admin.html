@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>线索管理平台 - 智能制造调研</title>
+    <style>
+        :root {
+            --primary: #2563eb; --primary-light: #eff6ff;
+            --success: #10b981; --success-bg: #ecfdf5;
+            --warning: #f59e0b; --warning-bg: #fffbeb;
+            --danger: #ef4444; --danger-bg: #fef2f2;
+            --text: #1e293b; --text-secondary: #64748b;
+            --bg: #f1f5f9; --card-bg: #fff;
+            --border: #e2e8f0; --shadow: 0 1px 3px rgba(0,0,0,.06);
+            --radius: 12px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif;
+            background: var(--bg); color: var(--text); min-height: 100vh;
+        }
+
+        /* 顶部导航 */
+        .navbar {
+            background: var(--card-bg); border-bottom: 1px solid var(--border);
+            padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between;
+            position: sticky; top: 0; z-index: 100;
+        }
+        .navbar .logo { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .navbar .logo span { color: var(--primary); }
+        .nav-actions { display: flex; gap: 12px; align-items: center; }
+        .btn {
+            padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer;
+            font-size: 13px; font-weight: 600; transition: .2s; font-family: inherit;
+            white-space: nowrap;
+        }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-primary:hover { opacity: .9; }
+        .btn-outline { background: #fff; color: var(--primary); border: 1.5px solid var(--primary); }
+        .btn-sm { padding: 4px 10px; font-size: 12px; border-radius: 6px; }
+
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px 24px; }
+
+        /* KPI 卡片 */
+        .kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 24px; }
+        .kpi-card {
+            background: var(--card-bg); border-radius: var(--radius); padding: 20px 22px;
+            box-shadow: var(--shadow); border: 1px solid var(--border);
+        }
+        .kpi-card .kpi-value { font-size: 30px; font-weight: 800; }
+        .kpi-card .kpi-label { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+        .kpi-card.high .kpi-value { color: var(--danger); }
+        .kpi-card.mid .kpi-value { color: var(--warning); }
+        .kpi-card.info .kpi-value { color: var(--primary); }
+
+        /* 筛选栏 */
+        .filter-bar {
+            display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center;
+        }
+        .filter-bar select, .filter-bar input {
+            padding: 8px 14px; border: 1.5px solid var(--border); border-radius: 8px;
+            font-size: 13px; background: var(--card-bg); font-family: inherit;
+        }
+        .filter-bar select:focus, .filter-bar input:focus { outline: none; border-color: var(--primary); }
+
+        /* 表格 */
+        .table-wrapper {
+            background: var(--card-bg); border-radius: var(--radius);
+            box-shadow: var(--shadow); border: 1px solid var(--border); overflow: auto;
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 900px; }
+        th {
+            background: #f8fafc; padding: 12px 14px; text-align: left;
+            font-weight: 600; color: var(--text-secondary); border-bottom: 2px solid var(--border);
+            white-space: nowrap;
+        }
+        td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        tr:hover td { background: #f8fafc; cursor: pointer; }
+
+        /* 线索等级标签 */
+        .tag {
+            display: inline-block; padding: 3px 10px; border-radius: 20px;
+            font-size: 12px; font-weight: 600;
+        }
+        .tag-high { background: var(--danger-bg); color: var(--danger); }
+        .tag-mid { background: var(--warning-bg); color: #b45309; }
+        .tag-low { background: #f1f5f9; color: var(--text-secondary); }
+
+        /* 跟进状态 */
+        .status-new { color: var(--primary); }
+        .status-contacted { color: var(--warning); }
+        .status-followed { color: var(--success); }
+        .status-closed { color: var(--text-secondary); }
+
+        /* 分数条 */
+        .score-bar { width: 50px; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; display: inline-block; vertical-align: middle; margin-right: 6px; }
+        .score-bar .fill { height: 100%; border-radius: 3px; }
+        .score-high .fill { background: var(--danger); width: 90%; }
+        .score-mid .fill { background: var(--warning); width: 60%; }
+        .score-low .fill { background: var(--text-secondary); width: 35%; }
+
+        /* 展开详情 */
+        .detail-row { display: none; }
+        .detail-row.open { display: table-row; }
+        .detail-row td { padding: 0 14px 16px; background: #fafbff; }
+        .detail-card {
+            background: #fff; border: 1px solid var(--border); border-radius: 10px;
+            padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+        }
+        .detail-card .section h4 {
+            font-size: 13px; color: var(--primary); margin-bottom: 8px;
+            padding-bottom: 6px; border-bottom: 1px solid var(--border);
+        }
+        .detail-card .section p { font-size: 13px; line-height: 1.6; color: var(--text); }
+        .detail-card .qa-item { margin-bottom: 8px; }
+        .detail-card .qa-item .q { font-size: 12px; color: var(--text-secondary); }
+        .detail-card .qa-item .a { font-size: 13px; font-weight: 500; }
+        .detail-card .insight { font-size: 13px; padding: 3px 0; display: flex; gap: 6px; }
+        .detail-card .actions { margin-top: 12px; display: flex; gap: 8px; }
+
+        .empty { text-align: center; padding: 80px 20px; color: var(--text-secondary); }
+        .loading { text-align: center; padding: 60px; }
+        .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin .8s linear infinite; margin: auto; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 768px) {
+            .kpi-grid { grid-template-columns: repeat(3,1fr); }
+            .container { padding: 12px; }
+            .detail-card { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">🏭 <span>智能制造线索管理平台</span></div>
+        <div class="nav-actions">
+            <button class="btn btn-outline" onclick="location.href='/'">📋 问卷端</button>
+            <button class="btn btn-primary" onclick="loadAll()">🔄 刷新</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- KPI -->
+        <div class="kpi-grid" id="kpiGrid"></div>
+
+        <!-- 筛选 -->
+        <div class="filter-bar">
+            <select id="filterLevel" onchange="renderTable()">
+                <option value="all">全部等级</option>
+                <option value="高优">🔴 高优</option>
+                <option value="中优">🟡 中优</option>
+                <option value="普通">⚪ 普通</option>
+            </select>
+            <select id="filterStatus" onchange="renderTable()">
+                <option value="all">全部状态</option>
+                <option value="new">🆕 待跟进</option>
+                <option value="contacted">📞 已联系</option>
+                <option value="followed">✅ 已跟进</option>
+                <option value="closed">📁 已关闭</option>
+            </select>
+            <input type="text" id="filterCompany" placeholder="搜索企业..." oninput="renderTable()">
+        </div>
+
+        <!-- 数据表格 -->
+        <div class="table-wrapper" id="tableContainer">
+            <div class="loading"><div class="spinner"></div><p style="margin-top:12px;">加载中...</p></div>
+        </div>
+    </div>
+
+    <script>
+        const API = location.origin + '/api/admin';
+        let allSurveys = [], stats = {};
+
+        async function loadAll() {
+            document.getElementById('tableContainer').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+            try {
+                const [sResp, tResp] = await Promise.all([
+                    fetch(API + '/stats'), fetch(API + '/surveys')
+                ]);
+                stats = await sResp.json();
+                allSurveys = await tResp.json();
+                renderKPI();
+                renderTable();
+            } catch(e) {
+                document.getElementById('tableContainer').innerHTML = '<div class="empty">加载失败：' + e.message + '</div>';
+            }
+        }
+
+        function renderKPI() {
+            document.getElementById('kpiGrid').innerHTML = `
+                <div class="kpi-card info"><div class="kpi-value">${stats.total||0}</div><div class="kpi-label">📋 总问卷数</div></div>
+                <div class="kpi-card high"><div class="kpi-value">${stats.high_priority||0}</div><div class="kpi-label">🔴 高优线索</div></div>
+                <div class="kpi-card mid"><div class="kpi-value">${stats.mid_priority||0}</div><div class="kpi-label">🟡 中优线索</div></div>
+                <div class="kpi-card"><div class="kpi-value" style="color:#10b981">${stats.followed||0}</div><div class="kpi-label">✅ 已跟进</div></div>
+                <div class="kpi-card info"><div class="kpi-value">${stats.companies||0}</div><div class="kpi-label">🏢 覆盖企业</div></div>
+            `;
+        }
+
+        function renderTable() {
+            const levelFilter = document.getElementById('filterLevel').value;
+            const statusFilter = document.getElementById('filterStatus').value;
+            const companyFilter = document.getElementById('filterCompany').value.toLowerCase();
+
+            let list = allSurveys.filter(s => s.is_completed);
+            if (levelFilter !== 'all') list = list.filter(s => s.lead_level === levelFilter);
+            if (statusFilter !== 'all') list = list.filter(s => s.follow_status === statusFilter);
+            if (companyFilter) list = list.filter(s => s.company.toLowerCase().includes(companyFilter));
+
+            if (list.length === 0) {
+                document.getElementById('tableContainer').innerHTML = '<div class="empty"><p style="font-size:40px;">📭</p><p>暂无匹配的问卷数据</p></div>';
+                return;
+            }
+
+            let html = `<table><thead><tr>
+                <th>企业</th><th>联系人</th><th>岗位</th><th>线索等级</th><th>评分</th>
+                <th>核心痛点</th><th>跟进建议</th><th>状态</th><th>时间</th>
+            </tr></thead><tbody>`;
+
+            list.forEach(s => {
+                let pain = [];
+                try { pain = JSON.parse(s.pain_points || '[]'); } catch(e) {}
+                const levelTag = s.lead_level === '高优' ? 'tag-high' : s.lead_level === '中优' ? 'tag-mid' : 'tag-low';
+                const scoreClass = s.lead_score >= 80 ? 'score-high' : s.lead_score >= 60 ? 'score-mid' : 'score-low';
+                const statusLabel = {new:'待跟进',contacted:'已联系',followed:'已跟进',closed:'已关闭'}[s.follow_status]||'待跟进';
+                const time = (s.completed_at||s.created_at||'').slice(0,16).replace('T',' ');
+
+                html += `<tr onclick="toggleDetail('${s.session_id}')">
+                    <td><strong>${esc(s.company)}</strong></td>
+                    <td>${esc(s.name)}</td>
+                    <td>${esc(s.position)}</td>
+                    <td><span class="tag ${levelTag}">${s.lead_level||'普通'}</span></td>
+                    <td><span class="score-bar ${scoreClass}"><span class="fill"></span></span>${s.lead_score||50}</td>
+                    <td>${esc(pain[0]||'—')}</td>
+                    <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(s.follow_up_advice||'')}">${esc((s.follow_up_advice||'').slice(0,20))}</td>
+                    <td>${esc(statusLabel)}</td>
+                    <td style="white-space:nowrap">${time}</td>
+                </tr>
+                <tr class="detail-row" id="detail-${s.session_id}">
+                    <td colspan="9">${renderDetail(s)}</td>
+                </tr>`;
+            });
+
+            html += '</tbody></table>';
+            document.getElementById('tableContainer').innerHTML = html;
+        }
+
+        function renderDetail(s) {
+            let qa = [], insights = [], pain = [];
+            try { qa = JSON.parse(s.qa_history||'[]'); } catch(e) {}
+            try { insights = JSON.parse(s.analysis_insights||'[]'); } catch(e) {}
+            try { pain = JSON.parse(s.pain_points||'[]'); } catch(e) {}
+
+            const qaHtml = qa.map(q => `<div class="qa-item"><div class="q">Q${q.question_number}: ${esc(q.question)}</div><div class="a">👉 ${esc(q.answer)}</div></div>`).join('');
+            const insightHtml = insights.map(i => `<div class="insight">💡 ${esc(i)}</div>`).join('');
+            const painHtml = pain.map(p => `<div class="insight">⚠️ ${esc(p)}</div>`).join('');
+
+            const sid = s.session_id;
+            const currentStatus = s.follow_status || 'new';
+
+            return `<div class="detail-card">
+                <div class="section">
+                    <h4>📋 问答详情</h4>
+                    ${qaHtml}
+                </div>
+                <div class="section">
+                    <h4>📊 企业画像</h4>
+                    <p>${esc(s.analysis_summary||'')}</p>
+                    ${painHtml ? '<div style="margin-top:10px">'+painHtml+'</div>' : ''}
+                    <p style="margin-top:10px;color:var(--primary);font-weight:500;">📝 ${esc(s.follow_up_advice||'')}</p>
+                </div>
+                <div class="section">
+                    <h4>🔎 洞察与建议</h4>
+                    ${insightHtml || '<p>暂无</p>'}
+                </div>
+                <div class="section">
+                    <h4>📌 跟进操作</h4>
+                    <p>当前状态：<strong>${esc({new:'待跟进',contacted:'已联系',followed:'已跟进',closed:'已关闭'}[currentStatus])}</strong></p>
+                    <div class="actions">
+                        <button class="btn btn-sm btn-primary" onclick="event.stopPropagation();updateFollow('${sid}','contacted')">📞 标记已联系</button>
+                        <button class="btn btn-sm" style="background:#10b981;color:#fff" onclick="event.stopPropagation();updateFollow('${sid}','followed')">✅ 标记已跟进</button>
+                        <button class="btn btn-sm btn-outline" onclick="event.stopPropagation();updateFollow('${sid}','closed')">📁 关闭</button>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        function toggleDetail(sid) {
+            const row = document.getElementById('detail-' + sid);
+            if (row) row.classList.toggle('open');
+        }
+
+        async function updateFollow(sid, status) {
+            try {
+                await fetch(API + '/follow', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({session_id: sid, status: status})
+                });
+                loadAll();
+            } catch(e) { alert('操作失败：'+e.message); }
+        }
+
+        function esc(s) {
+            const d = document.createElement('div');
+            d.textContent = s||'';
+            return d.innerHTML;
+        }
+
+        loadAll();
+    </script>
+</body>
+</html>

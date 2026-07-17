@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>智能制造调研问卷</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="survey-container">
+
+    <!-- 头部 -->
+    <header class="survey-header">
+        <div class="brand"><span class="icon">🏭</span><span class="text">智能制造调研</span></div>
+        <h1>企业数字化转型需求调研</h1>
+        <p class="desc">您的反馈将帮助我们更好地理解行业需求 · 共5题</p>
+    </header>
+
+    <!-- 进度条 -->
+    <div class="progress-wrap" id="progressWrap">
+        <div class="progress-track"><div class="progress-track-fill" id="progressTrack"></div></div>
+        <div class="progress-dots">
+            <div class="progress-dot current" data-step="1"><span class="num">1</span><span class="check">✓</span></div>
+            <div class="progress-dot" data-step="2"><span class="num">2</span><span class="check">✓</span></div>
+            <div class="progress-dot" data-step="3"><span class="num">3</span><span class="check">✓</span></div>
+            <div class="progress-dot" data-step="4"><span class="num">4</span><span class="check">✓</span></div>
+            <div class="progress-dot" data-step="5"><span class="num">5</span><span class="check">✓</span></div>
+        </div>
+        <div class="progress-label" id="progressLabel">1/5 · 基本信息</div>
+    </div>
+
+    <!-- 卡片主体 -->
+    <div class="survey-card" id="surveyCard">
+
+        <!-- 步骤1: 基本信息 -->
+        <div class="step active" id="step1">
+            <div class="q-badge">📋 第 1 题 / 共 5 题</div>
+            <h2 class="q-title">请填写您的基本信息</h2>
+
+            <div class="form-field">
+                <label>姓名<span class="req">*</span></label>
+                <input type="text" id="name" placeholder="请输入您的姓名" maxlength="50" autocomplete="name">
+            </div>
+            <div class="form-field">
+                <label>所属企业<span class="req">*</span></label>
+                <input type="text" id="company" placeholder="请输入企业全称" maxlength="100" autocomplete="organization">
+                <div class="form-hint">请填写工商注册全称</div>
+            </div>
+            <div class="form-field">
+                <label>负责岗位<span class="req">*</span></label>
+                <input type="text" id="position" placeholder="例：生产主管 / 技术经理" maxlength="100">
+                <div class="form-hint">您在企业中的主要职能角色</div>
+            </div>
+
+            <button class="survey-btn btn-main" id="btnStart" onclick="startSurvey()">
+                开始答题 →
+            </button>
+        </div>
+
+        <!-- 步骤2-5: 选择题 -->
+        <div class="step" id="stepChoice">
+            <div class="q-badge" id="choiceBadge"></div>
+            <h2 class="q-title" id="choiceTitle"></h2>
+            <div class="options-list" id="optionsList"></div>
+            <button class="survey-btn btn-main" id="btnSubmit" onclick="submitChoice()" disabled>请先选择一项</button>
+        </div>
+
+        <!-- 完成页 -->
+        <div class="step" id="stepComplete">
+            <div class="complete-hero">
+                <div class="complete-icon">✅</div>
+                <h2>调研完成！</h2>
+                <p class="sub">感谢您的宝贵反馈</p>
+                <div class="lead-badge" id="leadBadge"></div>
+            </div>
+
+            <div class="analysis-block">
+                <div class="qa-review" id="qaReview"></div>
+                <div class="analysis-card" id="analysisSummary"></div>
+                <div class="insight-list" id="insightList"></div>
+            </div>
+
+            <button class="survey-btn btn-second" onclick="location.reload()">重新填写</button>
+        </div>
+    </div>
+
+    <!-- 底部 -->
+    <footer class="survey-footer">
+        <p>🔒 数据仅用于行业研究分析 · 严格保护隐私</p>
+    </footer>
+
+</div>
+
+<!-- 加载层 -->
+<div class="loading-layer" id="loadingLayer">
+    <div class="spinner-outer"></div>
+    <div class="loading-text" id="loadingText">请稍候...</div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

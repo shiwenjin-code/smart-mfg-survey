@@ -1,0 +1,10 @@
+[build]
+# 指定后端目录下的 requirements.txt
+builder = "nixpacks"
+
+[deploy]
+# 从 backend 目录启动
+startCommand = "cd backend && python app.py"
+
+[service]
+name = "smart-mfg-survey"
