@@ -58,33 +58,42 @@ sessions: dict[str, dict] = {}
 @app.post("/api/session/start")
 async def start_session(req: StartSessionRequest):
     """开始问卷：保存基本信息，生成 5 道 AI 题，返回第 1 题"""
-    session_id = uuid.uuid4().hex[:12]
+    try:
+        session_id = uuid.uuid4().hex[:12]
 
-    await save_user_info(session_id, req.name, req.company, req.position, req.contact)
-    user_info = {
-        "name": req.name, "company": req.company,
-        "position": req.position, "contact": req.contact
-    }
+        try:
+            await save_user_info(session_id, req.name, req.company, req.position, req.contact)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"保存用户信息失败：{str(e)}")
 
-    # 生成全部 5 道题
-    questions = await generate_all_questions(user_info)
+        user_info = {
+            "name": req.name, "company": req.company,
+            "position": req.position, "contact": req.contact
+        }
 
-    sessions[session_id] = {
-        "user_info": user_info,
-        "current_question": 0,
-        "questions": questions,
-        "qa_history": []
-    }
+        # 生成全部 5 道题
+        questions = await generate_all_questions(user_info)
 
-    q = questions[0]
-    return {
-        "session_id": session_id,
-        "question_number": 1,
-        "question": q["question"],
-        "options": q["options"],
-        "is_last": False,
-        "user_info": user_info
-    }
+        sessions[session_id] = {
+            "user_info": user_info,
+            "current_question": 0,
+            "questions": questions,
+            "qa_history": []
+        }
+
+        q = questions[0]
+        return {
+            "session_id": session_id,
+            "question_number": 1,
+            "question": q["question"],
+            "options": q["options"],
+            "is_last": False,
+            "user_info": user_info
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"服务异常：{str(e)}")
 
 
 @app.post("/api/session/answer")
