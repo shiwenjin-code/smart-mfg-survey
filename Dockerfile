@@ -1,11 +1,17 @@
 FROM python:3.11-slim
 
-# Cache buster: 2026-07-21-v3.0-qrcode
-ARG CACHE_BUST=1
+# Cache buster: 2026-07-21-v4
+ARG CACHE_BUST=2
 
 WORKDIR /app
 
-# Install deps (qrcode[pil] requires Pillow for image generation)
+# Install system deps for Pillow (required by qrcode image generation)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libjpeg62-turbo-dev \
+    zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python deps
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
@@ -16,7 +22,6 @@ COPY frontend/ /app/frontend/
 
 WORKDIR /app/backend
 
-# Expose port
 EXPOSE 8000
 
 CMD ["python", "app.py"]
