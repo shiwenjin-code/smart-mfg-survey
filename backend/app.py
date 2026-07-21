@@ -93,10 +93,13 @@ async def start_session(req: StartSessionRequest):
     """开始问卷：保存基本信息，生成 5 道 AI 题，返回第 1 题"""
     try:
         session_id = uuid.uuid4().hex[:12]
+        logger.info(f"[start_session] session={session_id} user={req.name}")
 
         try:
             await save_user_info(session_id, req.name, req.company, req.position, req.contact)
+            logger.info(f"[start_session] save_user_info OK")
         except Exception as e:
+            logger.error(f"[start_session] save_user_info FAILED: {e}")
             raise HTTPException(status_code=500, detail=f"保存用户信息失败：{str(e)}")
 
         user_info = {
@@ -105,7 +108,9 @@ async def start_session(req: StartSessionRequest):
         }
 
         # 生成全部 5 道题
+        logger.info(f"[start_session] calling generate_all_questions...")
         questions = await generate_all_questions(user_info)
+        logger.info(f"[start_session] got {len(questions)} questions")
 
         sessions[session_id] = {
             "user_info": user_info,
@@ -113,9 +118,10 @@ async def start_session(req: StartSessionRequest):
             "questions": questions,
             "qa_history": []
         }
+        logger.info(f"[start_session] session stored")
 
         q = questions[0]
-        return {
+        resp = {
             "session_id": session_id,
             "question_number": 1,
             "question": q["question"],
@@ -123,9 +129,14 @@ async def start_session(req: StartSessionRequest):
             "is_last": False,
             "user_info": user_info
         }
+        logger.info(f"[start_session] returning response, q={q['question'][:30]}...")
+        return resp
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"[start_session] UNHANDLED: {type(e).__name__}: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"服务异常：{str(e)}")
 
 
