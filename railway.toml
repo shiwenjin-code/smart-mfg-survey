@@ -1,10 +1,8 @@
 [build]
 builder = "nixpacks"
-buildCommand = "pip install -r backend/requirements.txt"
-nixpacksConfigPath = "backend"
 
 [deploy]
-startCommand = "cd backend && python app.py --port $PORT"
+startCommand = "cd backend && python app.py"
 healthcheckPath = "/api/health"
 restartPolicyType = "ON_FAILURE"
 
