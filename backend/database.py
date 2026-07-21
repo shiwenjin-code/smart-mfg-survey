@@ -229,3 +229,73 @@ async def get_all_surveys() -> list[dict]:
         return [dict(r) for r in results]
     finally:
         await db.close()
+
+
+async def export_surveys_csv() -> str:
+    """导出所有问卷数据为 CSV 字符串"""
+    db = await get_db()
+    try:
+        rows = await db.execute(
+            """SELECT name, company, position, qa_history, analysis_summary,
+                      pain_points, follow_up_advice, lead_level, lead_score,
+                      follow_status, is_completed, created_at, completed_at
+               FROM surveys ORDER BY created_at DESC"""
+        )
+        results = await rows.fetchall()
+
+        headers = [
+            "姓名", "企业", "岗位", "线索等级", "评分",
+            "问卷答案", "分析摘要", "痛点", "跟进建议",
+            "跟进状态", "是否完成", "创建时间", "完成时间"
+        ]
+
+        def csv_escape(val):
+            """CSV 转义"""
+            s = str(val or "").replace('"', '""')
+            return f'"{s}"'
+
+        lines = [",".join(csv_escape(h) for h in headers)]
+
+        status_map = {"new": "待跟进", "contacted": "已联系", "followed": "已跟进", "closed": "已关闭"}
+
+        for r in results:
+            d = dict(r)
+            # 格式化问答
+            qa_str = ""
+            try:
+                qa_list = json.loads(d.get("qa_history", "[]"))
+                qa_parts = []
+                for qa in qa_list:
+                    qa_parts.append(f"Q{qa.get('question_number','')}: {qa.get('question','')} → {qa.get('answer','')}")
+                qa_str = " | ".join(qa_parts)
+            except (json.JSONDecodeError, KeyError):
+                qa_str = d.get("qa_history", "")
+
+            # 格式化痛点
+            pain_str = ""
+            try:
+                pain_list = json.loads(d.get("pain_points", "[]"))
+                pain_str = "；".join(pain_list)
+            except (json.JSONDecodeError, KeyError):
+                pain_str = d.get("pain_points", "")
+
+            row = [
+                d.get("name", ""),
+                d.get("company", ""),
+                d.get("position", ""),
+                d.get("lead_level", ""),
+                d.get("lead_score", ""),
+                qa_str,
+                d.get("analysis_summary", ""),
+                pain_str,
+                d.get("follow_up_advice", ""),
+                status_map.get(d.get("follow_status", ""), d.get("follow_status", "")),
+                "是" if d.get("is_completed") else "否",
+                (d.get("created_at", "") or "")[:19],
+                (d.get("completed_at", "") or "")[:19],
+            ]
+            lines.append(",".join(csv_escape(str(v)) for v in row))
+
+        return "\n".join(lines)
+    finally:
+        await db.close()

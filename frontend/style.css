@@ -176,6 +176,27 @@ button{cursor:pointer;border:none;background:none}
 .form-field input::placeholder{color:var(--c-text-3)}
 .form-hint{font-size:12px;color:var(--c-text-3);margin-top:4px}
 
+/* ---------- 企业名称智能联想下拉 ---------- */
+.autocomplete-field{position:relative}
+.autocomplete-dropdown{
+    position:absolute;top:100%;left:0;right:0;z-index:200;
+    background:var(--c-surface);border:2px solid var(--c-primary);
+    border-top:none;border-radius:0 0 var(--radius-sm) var(--radius-sm);
+    max-height:220px;overflow-y:auto;display:none;
+    box-shadow:0 8px 24px rgba(0,0,0,.1);
+}
+.autocomplete-dropdown.show{display:block}
+.autocomplete-item{
+    padding:11px 16px;font-size:14px;cursor:pointer;transition:background .15s;
+    border-bottom:1px solid var(--c-border);
+    color:var(--c-text);
+}
+.autocomplete-item:last-child{border-bottom:none}
+.autocomplete-item:hover{background:var(--c-primary-light);color:var(--c-primary)}
+.autocomplete-empty{
+    padding:14px 16px;font-size:13px;color:var(--c-text-3);text-align:center;
+}
+
 /* ---------- 选项列表 ---------- */
 .options-list{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
 .option-card{

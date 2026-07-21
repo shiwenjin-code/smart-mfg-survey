@@ -1,6 +1,6 @@
 /**
- * 智能制造问卷 - 前端交互 v3.0
- * 全响应式 · 丝滑切换 · 点状进度
+ * 智能制造问卷 - 前端交互 v5.0
+ * 全响应式 · 丝滑切换 · 6题 · 企业智能联想 · 基本信息不计入题数
  */
 const API_BASE = location.origin + '/api';
 const $ = s => document.querySelector(s);
@@ -8,6 +8,8 @@ const $$ = s => document.querySelectorAll(s);
 
 let sessionId = null, selectedOption = null;
 let currentQNum = 0, currentQText = '';
+const TOTAL_QUESTIONS = 6;  // 6道AI选择题（基本信息不占题数）
+let autocompleteTimer = null;
 
 // ==================== 工具 ====================
 function showLoading(text) { $('#loadingText').textContent = text; $('#loadingLayer').classList.add('show'); }
@@ -19,6 +21,59 @@ function toast(msg) {
 }
 function esc(t) { const d = document.createElement('div'); d.textContent = t || ''; return d.innerHTML; }
 
+// ==================== 企业名称智能联想 ====================
+async function autocompleteCompany() {
+    const input = $('#company');
+    const dropdown = $('#companySuggestions');
+    const val = (input.value || '').trim();
+
+    if (val.length < 1) {
+        dropdown.innerHTML = '';
+        dropdown.classList.remove('show');
+        return;
+    }
+
+    try {
+        const resp = await fetch(`${API_BASE}/autocomplete/company?q=${encodeURIComponent(val)}`);
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const list = data.suggestions || [];
+
+        if (list.length === 0) {
+            dropdown.innerHTML = '<div class="autocomplete-empty">未找到匹配企业，可手动输入</div>';
+        } else {
+            dropdown.innerHTML = list.map(name =>
+                `<div class="autocomplete-item" onclick="selectCompany('${esc(name).replace(/'/g, "\\'")}')">${esc(name)}</div>`
+            ).join('');
+        }
+        dropdown.classList.add('show');
+    } catch(e) {
+        // 静默失败
+    }
+}
+
+function selectCompany(name) {
+    $('#company').value = name;
+    $('#companySuggestions').innerHTML = '';
+    $('#companySuggestions').classList.remove('show');
+    // 自动聚焦到岗位输入
+    setTimeout(() => $('#position').focus(), 100);
+}
+
+// 输入防抖
+$('#company').addEventListener('input', function() {
+    clearTimeout(autocompleteTimer);
+    autocompleteTimer = setTimeout(autocompleteCompany, 200);
+});
+$('#company').addEventListener('focus', function() {
+    if (this.value.trim().length >= 1) autocompleteCompany();
+});
+$('#company').addEventListener('blur', function() {
+    setTimeout(() => {
+        $('#companySuggestions').classList.remove('show');
+    }, 200);
+});
+
 // ==================== 步骤切换 ====================
 function switchStep(fromStepId, toStepId) {
     const from = $(`#${fromStepId}`), to = $(`#${toStepId}`);
@@ -27,8 +82,10 @@ function switchStep(fromStepId, toStepId) {
 }
 
 // ==================== 进度更新 ====================
-function updateProgress(current, total = 5) {
-    const pct = ((current) / total) * 100;
+function updateProgress(current, total) {
+    total = total || TOTAL_QUESTIONS;
+    // current 为 0 时表示基本信息步骤
+    const pct = current === 0 ? 0 : ((current) / total) * 100;
     $('#progressTrack').style.width = pct + '%';
     $$('.progress-dot').forEach(d => {
         const s = parseInt(d.dataset.step);
@@ -36,8 +93,12 @@ function updateProgress(current, total = 5) {
         if (s < current) d.classList.add('done');
         else if (s === current) d.classList.add('current');
     });
-    const labels = ['基本信息', '数字化现状', '核心痛点', '投入意愿', '时间规划'];
-    $('#progressLabel').textContent = `${current}/${total} · ${labels[current] || ''}`;
+    const labels = ['', '数字化现状', '核心痛点', '投入意愿', '时间规划', '采购决策', '技术人才'];
+    if (current === 0) {
+        $('#progressLabel').textContent = `基本信息 · 共 ${total} 题`;
+    } else {
+        $('#progressLabel').textContent = `${current}/${total} · ${labels[current] || ''}`;
+    }
 }
 
 // ==================== 开始调研 ====================
@@ -57,7 +118,7 @@ async function startSurvey() {
         sessionId = data.session_id;
         renderChoice(data.question_number, data.question, data.options, data.is_last);
         switchStep('step1', 'stepChoice');
-        updateProgress(1);
+        updateProgress(data.question_number);
         hideLoading();
     } catch (err) {
         hideLoading(); toast('初始化失败：' + err.message);
@@ -69,7 +130,7 @@ async function startSurvey() {
 function renderChoice(qNum, question, options, isLast) {
     currentQNum = qNum; currentQText = question; selectedOption = null;
 
-    $('#choiceBadge').textContent = `📋 第 ${qNum} 题 / 共 5 题`;
+    $('#choiceBadge').textContent = `📋 第 ${qNum} 题 / 共 ${TOTAL_QUESTIONS} 题`;
     $('#choiceTitle').textContent = question;
 
     $('#optionsList').innerHTML = options.map((opt, idx) => {
@@ -91,7 +152,7 @@ function selectOpt(el, value) {
     selectedOption = value;
     const btn = $('#btnSubmit');
     btn.disabled = false;
-    btn.textContent = currentQNum >= 5 ? '提交并查看分析 →' : '下一题 →';
+    btn.textContent = currentQNum >= TOTAL_QUESTIONS ? '提交并查看分析 →' : '下一题 →';
     btn.className = 'survey-btn btn-main';
 }
 
@@ -100,7 +161,7 @@ async function submitChoice() {
     if (!selectedOption) { toast('请先选择一个选项'); return; }
     const btn = $('#btnSubmit'); btn.disabled = true; btn.textContent = '提交中...';
 
-    if (currentQNum >= 5) showLoading('AI 正在分析您的全部回答...');
+    if (currentQNum >= TOTAL_QUESTIONS) showLoading('AI 正在分析您的全部回答...');
 
     try {
         const resp = await fetch(API_BASE + '/session/answer', {
@@ -116,7 +177,7 @@ async function submitChoice() {
         } else {
             renderComplete(data);
             switchStep('stepChoice', 'stepComplete');
-            updateProgress(5);
+            updateProgress(TOTAL_QUESTIONS);
             hideLoading();
         }
     } catch (err) {

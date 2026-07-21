@@ -136,6 +136,7 @@
         <div class="logo">🏭 <span>智能制造线索管理平台</span></div>
         <div class="nav-actions">
             <button class="btn btn-outline" onclick="location.href='/'">📋 问卷端</button>
+            <button class="btn btn-primary" onclick="exportCSV()" style="background:#10b981">📥 导出 CSV</button>
             <button class="btn btn-primary" onclick="loadAll()">🔄 刷新</button>
         </div>
     </nav>
@@ -308,6 +309,20 @@
         }
 
         loadAll();
+
+        async function exportCSV() {
+            try {
+                const resp = await fetch(API + '/export');
+                if (!resp.ok) throw new Error('导出失败');
+                const blob = await resp.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'survey_data_' + new Date().toISOString().slice(0,10) + '.csv';
+                a.click();
+                URL.revokeObjectURL(url);
+            } catch(e) { alert('导出失败：'+e.message); }
+        }
     </script>
 </body>
 </html>

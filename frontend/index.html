@@ -13,7 +13,7 @@
     <header class="survey-header">
         <div class="brand"><span class="icon">🏭</span><span class="text">智能制造调研</span></div>
         <h1>企业数字化转型需求调研</h1>
-        <p class="desc">您的反馈将帮助我们更好地理解行业需求 · 共5题</p>
+        <p class="desc">您的反馈将帮助我们更好地理解行业需求 · 共6题</p>
     </header>
 
     <!-- 进度条 -->
@@ -25,26 +25,28 @@
             <div class="progress-dot" data-step="3"><span class="num">3</span><span class="check">✓</span></div>
             <div class="progress-dot" data-step="4"><span class="num">4</span><span class="check">✓</span></div>
             <div class="progress-dot" data-step="5"><span class="num">5</span><span class="check">✓</span></div>
+            <div class="progress-dot" data-step="6"><span class="num">6</span><span class="check">✓</span></div>
         </div>
-        <div class="progress-label" id="progressLabel">1/5 · 基本信息</div>
+        <div class="progress-label" id="progressLabel">基本信息 · 共 6 题</div>
     </div>
 
     <!-- 卡片主体 -->
     <div class="survey-card" id="surveyCard">
 
-        <!-- 步骤1: 基本信息 -->
+        <!-- 步骤1: 基本信息（不计入题数） -->
         <div class="step active" id="step1">
-            <div class="q-badge">📋 第 1 题 / 共 5 题</div>
+            <div class="q-badge">📋 基本信息</div>
             <h2 class="q-title">请填写您的基本信息</h2>
 
             <div class="form-field">
                 <label>姓名<span class="req">*</span></label>
                 <input type="text" id="name" placeholder="请输入您的姓名" maxlength="50" autocomplete="name">
             </div>
-            <div class="form-field">
+            <div class="form-field autocomplete-field">
                 <label>所属企业<span class="req">*</span></label>
-                <input type="text" id="company" placeholder="请输入企业全称" maxlength="100" autocomplete="organization">
-                <div class="form-hint">请填写工商注册全称</div>
+                <input type="text" id="company" placeholder="请输入企业全称，支持智能联想" maxlength="100" autocomplete="organization" autocomplete="off">
+                <div class="autocomplete-dropdown" id="companySuggestions"></div>
+                <div class="form-hint">请填写工商注册全称，输入时自动联想</div>
             </div>
             <div class="form-field">
                 <label>负责岗位<span class="req">*</span></label>

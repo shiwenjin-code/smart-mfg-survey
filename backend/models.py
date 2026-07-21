@@ -15,7 +15,7 @@ class UserInfo(BaseModel):
 class Answer(BaseModel):
     """用户回答"""
     session_id: str = Field(..., description="会话ID")
-    question_number: int = Field(..., ge=1, le=5, description="题号")
+    question_number: int = Field(..., ge=1, le=10, description="题号")
     question: str = Field(..., description="问题内容")
     answer: str = Field(..., description="用户回答")
 
