@@ -417,28 +417,77 @@ button{cursor:pointer;border:none;background:none}
     .complete-icon{font-size:72px}
     .qrcode-modal-content{width:400px}
     .qrcode-modal-content img{width:250px;height:250px}
+    /* 完成页 - 平板：加大间距和字号 */
+    .complete-hero h2{font-size:24px}
+    .complete-hero .sub{font-size:15px}
+    .block-title{font-size:15px}
+    .qa-row{padding:14px 18px;font-size:14px}
+    .analysis-card{padding:20px}
+    .analysis-card .analysis-text{font-size:15px}
+    .insight-row{padding:12px 16px;font-size:14px}
+    .lead-badge{font-size:15px;padding:12px 24px}
 }
 
-/* PC: 1024+ */
+/* PC: 1024+ → 完成页双栏布局 */
 @media(min-width:1024px){
     .survey-container{padding:32px 40px 48px}
-    .survey-card{max-width:680px;padding:36px 44px;border-radius:28px}
+    .survey-card{max-width:860px;padding:40px 48px;border-radius:28px}
     .survey-card::before{height:5px}
+    .survey-header{max-width:860px}
     .survey-header h1{font-size:30px}
     .survey-header .desc{font-size:16px}
+    .progress-wrap{max-width:860px}
+    .survey-footer{max-width:860px}
     .options-list{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     .option-card{min-height:72px}
-    .analysis-card{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap}
-    .analysis-card>p:first-of-type{flex:1}
-    .analysis-card .advice{flex:1;border-top:none;border-left:1px solid rgba(79,70,229,.15);padding-left:20px;margin-top:0;display:flex;align-items:center}
-    .complete-actions{flex-direction:row}
+
+    /* 完成页 - PC 双栏布局 */
+    .complete-hero{padding:20px 0 28px}
+    .complete-icon{font-size:80px}
+    .complete-hero h2{font-size:28px;margin:16px 0 6px}
+    .complete-hero .sub{font-size:16px}
+    .lead-badge{font-size:16px;padding:12px 28px}
+
+    .analysis-block{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        grid-template-rows:auto auto;
+        gap:20px;
+        padding-top:24px;
+    }
+    .qa-review{grid-column:1;grid-row:1/3;margin-bottom:0}
+    .analysis-card{grid-column:2;grid-row:1;margin-bottom:0}
+    .insight-list{grid-column:2;grid-row:2}
+
+    .block-title{font-size:15px}
+    .qa-row{padding:14px 18px;font-size:14px}
+    .analysis-card{padding:24px;display:flex;flex-direction:column;gap:12px}
+    .analysis-card .analysis-text{font-size:15px;line-height:1.75}
+    .analysis-card .advice{
+        border-top:1px solid rgba(79,70,229,.15);padding-top:12px;
+        border-left:none;padding-left:0;margin-top:auto;
+        display:block;
+    }
+    .insight-row{padding:12px 16px;font-size:14px}
+
+    .complete-actions{
+        flex-direction:row;
+        margin-top:28px;
+        gap:14px;
+    }
     .complete-actions .survey-btn{flex:1}
+    .complete-actions .btn-second{margin-top:0}
 }
 
 /* 大屏: 1440+ */
 @media(min-width:1440px){
-    .survey-card{max-width:760px;padding:40px 56px}
-    .survey-header{padding:48px 0 32px;max-width:760px}
+    .survey-card{max-width:920px;padding:44px 60px}
+    .survey-header{padding:48px 0 32px;max-width:920px}
+    .progress-wrap{max-width:920px}
+    .survey-footer{max-width:920px}
+    .complete-icon{font-size:88px}
+    .complete-hero h2{font-size:32px}
+    .analysis-block{gap:24px}
 }
 
 /* 小手机: <360px */
