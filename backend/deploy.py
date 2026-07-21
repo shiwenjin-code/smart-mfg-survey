@@ -75,31 +75,32 @@ for name, value in env_vars:
     print(f"  ✅ {name} = ***")
 
 # ========================================================
-# Step 3: 触发部署
+# Step 3: 触发部署（从 GitHub 拉取最新代码并重新构建）
 # ========================================================
-print("\nStep 3: 触发部署...")
+print("\nStep 3: 触发 GitHub 重新部署...")
 q3 = """
 mutation ($input: DeploymentTriggerCreateInput!) {
   deploymentTriggerCreate(input: $input) {
     id
-    deployment {
-      id
-      status
-    }
   }
 }
 """
 data = gql(q3, {
     "input": {
+        "projectId": PROJECT_ID,
         "serviceId": SERVICE_ID,
-        "environmentId": env_id
+        "environmentId": env_id,
+        "provider": "github",
+        "repository": "shiwenjin-code/smart-mfg-survey",
+        "branch": "deploy-v6"
     }
 }, "Deploy")
-dep = data.get("deploymentTriggerCreate", {})
-dep_id = dep.get("id", "?")
-dep_status = dep.get("deployment", {}).get("status", "?")
-print(f"  部署触发ID: {dep_id}")
-print(f"  部署状态: {dep_status}")
+dep_id = (data or {}).get("deploymentTriggerCreate", {}).get("id", "?")
+if dep_id and dep_id != "?":
+    print(f"  ✅ 部署已触发！ID: {dep_id}")
+    print(f"  ⏳ 等待 Railway 构建（约 2-3 分钟）...")
+else:
+    print(f"  ⚠️ 部署触发可能失败，请手动到 Railway 仪表板操作")
 
 # ========================================================
 # Step 4: 查询域名
