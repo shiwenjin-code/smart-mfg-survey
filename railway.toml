@@ -1,5 +1,5 @@
 [build]
-builder = "nixpacks"
+builder = "docker"
 
 [deploy]
 startCommand = "cd backend && python app.py"
