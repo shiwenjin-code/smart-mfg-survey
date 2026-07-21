@@ -3,10 +3,15 @@
 import os
 import uuid
 import io
+import traceback
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse, Response, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # 路径常量
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -54,6 +59,34 @@ sessions: dict[str, dict] = {}
 
 
 # ==================== API 路由 ====================
+
+@app.get("/api/health")
+async def health_check():
+    """调试：健康检查"""
+    results = {"db": "unknown", "write": "unknown", "error": None}
+    try:
+        from database import get_db
+        db = await get_db()
+        try:
+            row = await db.execute("SELECT COUNT(*) as c FROM surveys")
+            count = (await row.fetchone())["c"]
+            results["db"] = f"ok (surveys: {count})"
+        finally:
+            await db.close()
+    except Exception as e:
+        results["db"] = f"fail: {type(e).__name__}: {str(e)}"
+        results["error"] = str(e)
+
+    try:
+        await save_user_info("health-check", "测试", "测试企业", "测试岗", "")
+        results["write"] = "ok"
+    except Exception as e:
+        results["write"] = f"fail: {type(e).__name__}: {str(e)}"
+        if not results["error"]:
+            results["error"] = str(e)
+
+    return results
+
 
 @app.post("/api/session/start")
 async def start_session(req: StartSessionRequest):
