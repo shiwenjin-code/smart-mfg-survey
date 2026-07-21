@@ -1,0 +1,11 @@
+{
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "Dockerfile"
+  },
+  "deploy": {
+    "startCommand": "cd /app/backend && python app.py",
+    "healthcheckPath": "/",
+    "healthcheckTimeout": 30
+  }
+}
