@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>问卷二维码 - 智能制造调研</title>
+    <style>
+        :root {
+            --c-primary: #4f46e5;
+            --c-text: #1e293b;
+            --c-text-2: #64748b;
+            --c-text-3: #94a3b8;
+            --c-surface: #ffffff;
+            --c-border: #e2e8f0;
+            --radius-lg: 24px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif;
+            background: linear-gradient(160deg, #eef2ff 0%, #f0f9ff 40%, #f0fdf4 100%);
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        .qrcode-card {
+            background: var(--c-surface);
+            border-radius: var(--radius-lg);
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 12px 40px rgba(0,0,0,.08);
+            max-width: 440px;
+            width: 100%;
+        }
+        .qrcode-card h1 {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--c-text);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .qrcode-card .subtitle {
+            font-size: 14px;
+            color: var(--c-text-2);
+            margin-bottom: 28px;
+        }
+        .qrcode-img {
+            width: 260px;
+            height: 260px;
+            margin: 0 auto 20px;
+            border-radius: 16px;
+            border: 2px solid var(--c-border);
+            padding: 8px;
+        }
+        .qrcode-url {
+            font-size: 13px;
+            color: var(--c-text-3);
+            word-break: break-all;
+            padding: 10px;
+            background: #f8fafc;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .qrcode-tip {
+            font-size: 13px;
+            color: var(--c-text-2);
+            padding: 12px;
+            background: #eef2ff;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            line-height: 1.6;
+        }
+        .qrcode-tip strong { color: var(--c-primary); }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: var(--c-primary);
+            color: #fff;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 14px;
+            transition: .2s;
+        }
+        .btn:hover { opacity: .9; transform: translateY(-1px); }
+        .links { margin-top: 16px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+        .links a { font-size: 13px; color: var(--c-primary); text-decoration: none; font-weight: 600; }
+        .links a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="qrcode-card">
+        <h1>🏭 智能制造调研</h1>
+        <p class="subtitle">企业数字化转型需求调研 · 微信扫码即可参与</p>
+
+        <img class="qrcode-img" id="qrcodeImg"
+             src="/api/qrcode?url="
+             alt="问卷二维码"
+             onerror="this.style.display='none'; document.getElementById('qrcodeFallback').style.display='block'">
+
+        <div id="qrcodeFallback" style="display:none;padding:40px;color:var(--c-text-3);">
+            <p>二维码加载中...</p>
+            <p style="font-size:12px;margin-top:8px;">请稍后刷新页面</p>
+        </div>
+
+        <div class="qrcode-url" id="qrcodeUrl"></div>
+
+        <div class="qrcode-tip">
+            📱 使用<strong>微信扫一扫</strong>即可开始问卷调查<br>
+            建议分享到企业微信群或行业公众号
+        </div>
+
+        <div class="links">
+            <a href="/">📋 问卷页面</a>
+            <a href="/admin">📊 管理后台</a>
+            <a href="/api/admin/export">📥 导出数据</a>
+        </div>
+    </div>
+
+    <script>
+        const url = location.origin + '/';
+        document.getElementById('qrcodeImg').src = '/api/qrcode?url=' + encodeURIComponent(url);
+        document.getElementById('qrcodeUrl').textContent = url;
+    </script>
+</body>
+</html>

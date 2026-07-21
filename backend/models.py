@@ -10,6 +10,7 @@ class UserInfo(BaseModel):
     name: str = Field(..., description="用户姓名", max_length=50)
     company: str = Field(..., description="所属企业", max_length=100)
     position: str = Field(..., description="负责岗位", max_length=100)
+    contact: str = Field("", description="联系方式（手机/微信）", max_length=100)
 
 
 class Answer(BaseModel):
@@ -43,6 +44,7 @@ class StartSessionRequest(BaseModel):
     name: str
     company: str
     position: str
+    contact: str = ""
 
 
 class SessionInfo(BaseModel):

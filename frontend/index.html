@@ -13,10 +13,15 @@
     <header class="survey-header">
         <div class="brand"><span class="icon">🏭</span><span class="text">智能制造调研</span></div>
         <h1>企业数字化转型需求调研</h1>
-        <p class="desc">您的反馈将帮助我们更好地理解行业需求 · 共6题</p>
+        <p class="desc">
+            <span class="desc-module">模块一：基本信息</span>
+            <span class="desc-sep">｜</span>
+            <span class="desc-module">模块二：专业调研（共5题）</span>
+        </p>
+        <a href="/admin" class="header-admin-link">📊 管理后台</a>
     </header>
 
-    <!-- 进度条 -->
+    <!-- 进度条 （仅跟踪 5 道 AI 题）-->
     <div class="progress-wrap" id="progressWrap">
         <div class="progress-track"><div class="progress-track-fill" id="progressTrack"></div></div>
         <div class="progress-dots">
@@ -25,18 +30,20 @@
             <div class="progress-dot" data-step="3"><span class="num">3</span><span class="check">✓</span></div>
             <div class="progress-dot" data-step="4"><span class="num">4</span><span class="check">✓</span></div>
             <div class="progress-dot" data-step="5"><span class="num">5</span><span class="check">✓</span></div>
-            <div class="progress-dot" data-step="6"><span class="num">6</span><span class="check">✓</span></div>
         </div>
-        <div class="progress-label" id="progressLabel">基本信息 · 共 6 题</div>
+        <div class="progress-label" id="progressLabel">基本信息 · AI 调研共 5 题</div>
     </div>
 
     <!-- 卡片主体 -->
     <div class="survey-card" id="surveyCard">
 
-        <!-- 步骤1: 基本信息（不计入题数） -->
+        <!-- 模块一：基本信息 -->
         <div class="step active" id="step1">
-            <div class="q-badge">📋 基本信息</div>
-            <h2 class="q-title">请填写您的基本信息</h2>
+            <div class="module-header">
+                <span class="module-badge">模块一</span>
+                <h3>基本信息</h3>
+            </div>
+            <p class="q-subtitle">请填写以下信息，AI 将为您定制专属调研问题</p>
 
             <div class="form-field">
                 <label>姓名<span class="req">*</span></label>
@@ -53,14 +60,23 @@
                 <input type="text" id="position" placeholder="例：生产主管 / 技术经理" maxlength="100">
                 <div class="form-hint">您在企业中的主要职能角色</div>
             </div>
+            <div class="form-field">
+                <label>联系方式<span class="req">*</span></label>
+                <input type="text" id="contact" placeholder="手机号或微信号，便于后续联系" maxlength="100" autocomplete="tel">
+                <div class="form-hint">仅用于后续调研回访，严格保密</div>
+            </div>
 
             <button class="survey-btn btn-main" id="btnStart" onclick="startSurvey()">
-                开始答题 →
+                AI 生成专属问卷 →
             </button>
         </div>
 
-        <!-- 步骤2-5: 选择题 -->
+        <!-- 模块二：AI 选择题 -->
         <div class="step" id="stepChoice">
+            <div class="module-header">
+                <span class="module-badge">模块二</span>
+                <h3>专业调研</h3>
+            </div>
             <div class="q-badge" id="choiceBadge"></div>
             <h2 class="q-title" id="choiceTitle"></h2>
             <div class="options-list" id="optionsList"></div>
@@ -72,7 +88,7 @@
             <div class="complete-hero">
                 <div class="complete-icon">✅</div>
                 <h2>调研完成！</h2>
-                <p class="sub">感谢您的宝贵反馈</p>
+                <p class="sub">感谢您的宝贵反馈，AI 已完成智能分析</p>
                 <div class="lead-badge" id="leadBadge"></div>
             </div>
 
@@ -82,13 +98,32 @@
                 <div class="insight-list" id="insightList"></div>
             </div>
 
-            <button class="survey-btn btn-second" onclick="location.reload()">重新填写</button>
+            <div class="complete-actions">
+                <button class="survey-btn btn-main btn-share" id="btnQRCode" onclick="showQRCode()">📱 分享问卷二维码</button>
+                <button class="survey-btn btn-second" onclick="location.reload()">重新填写</button>
+            </div>
+
+            <!-- 二维码弹窗 -->
+            <div class="qrcode-modal" id="qrcodeModal">
+                <div class="qrcode-modal-mask" onclick="closeQRCode()"></div>
+                <div class="qrcode-modal-content">
+                    <h4>📱 扫码开始调研</h4>
+                    <img id="qrcodeImg" src="" alt="问卷二维码" />
+                    <p class="qrcode-url" id="qrcodeUrl"></p>
+                    <button class="survey-btn btn-second btn-sm" onclick="closeQRCode()">关闭</button>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- 底部 -->
     <footer class="survey-footer">
         <p>🔒 数据仅用于行业研究分析 · 严格保护隐私</p>
+        <p style="margin-top:4px;font-size:11px;">
+            <a href="/admin" style="color:var(--c-primary);text-decoration:none;font-weight:600;">📊 管理后台</a>
+            &nbsp;·&nbsp;
+            <a href="/qrcode-page" style="color:var(--c-text-3);text-decoration:none;">二维码</a>
+        </p>
     </footer>
 
 </div>
@@ -96,7 +131,8 @@
 <!-- 加载层 -->
 <div class="loading-layer" id="loadingLayer">
     <div class="spinner-outer"></div>
-    <div class="loading-text" id="loadingText">请稍候...</div>
+    <div class="loading-text" id="loadingText">AI 正在为您生成专属问卷...</div>
+    <div class="loading-hint">根据您的企业画像定制问题，预计 3-8 秒</div>
 </div>
 
 <script src="app.js"></script>

@@ -1,6 +1,7 @@
 /**
- * 智能制造问卷 - 前端交互 v5.0
- * 全响应式 · 丝滑切换 · 6题 · 企业智能联想 · 基本信息不计入题数
+ * 智能制造问卷 - 前端交互 v3.0
+ * 双模块设计 · 5题 · 企业智能联想 · 联系方式 · 二维码分享
+ * 基本信息不计入题数，AI 调研独立模块
  */
 const API_BASE = location.origin + '/api';
 const $ = s => document.querySelector(s);
@@ -8,11 +9,14 @@ const $$ = s => document.querySelectorAll(s);
 
 let sessionId = null, selectedOption = null;
 let currentQNum = 0, currentQText = '';
-const TOTAL_QUESTIONS = 6;  // 6道AI选择题（基本信息不占题数）
+const TOTAL_QUESTIONS = 5;  // 5道 AI 选择题
 let autocompleteTimer = null;
 
 // ==================== 工具 ====================
-function showLoading(text) { $('#loadingText').textContent = text; $('#loadingLayer').classList.add('show'); }
+function showLoading(text) {
+    $('#loadingText').textContent = text || 'AI 正在为您生成专属问卷...';
+    $('#loadingLayer').classList.add('show');
+}
 function hideLoading() { $('#loadingLayer').classList.remove('show'); }
 function toast(msg) {
     const old = document.querySelector('.toast-msg'); if (old) old.remove();
@@ -47,20 +51,16 @@ async function autocompleteCompany() {
             ).join('');
         }
         dropdown.classList.add('show');
-    } catch(e) {
-        // 静默失败
-    }
+    } catch(e) {}
 }
 
 function selectCompany(name) {
     $('#company').value = name;
     $('#companySuggestions').innerHTML = '';
     $('#companySuggestions').classList.remove('show');
-    // 自动聚焦到岗位输入
     setTimeout(() => $('#position').focus(), 100);
 }
 
-// 输入防抖
 $('#company').addEventListener('input', function() {
     clearTimeout(autocompleteTimer);
     autocompleteTimer = setTimeout(autocompleteCompany, 200);
@@ -69,9 +69,7 @@ $('#company').addEventListener('focus', function() {
     if (this.value.trim().length >= 1) autocompleteCompany();
 });
 $('#company').addEventListener('blur', function() {
-    setTimeout(() => {
-        $('#companySuggestions').classList.remove('show');
-    }, 200);
+    setTimeout(() => { $('#companySuggestions').classList.remove('show'); }, 200);
 });
 
 // ==================== 步骤切换 ====================
@@ -84,8 +82,7 @@ function switchStep(fromStepId, toStepId) {
 // ==================== 进度更新 ====================
 function updateProgress(current, total) {
     total = total || TOTAL_QUESTIONS;
-    // current 为 0 时表示基本信息步骤
-    const pct = current === 0 ? 0 : ((current) / total) * 100;
+    const pct = current === 0 ? 0 : (current / total) * 100;
     $('#progressTrack').style.width = pct + '%';
     $$('.progress-dot').forEach(d => {
         const s = parseInt(d.dataset.step);
@@ -93,26 +90,52 @@ function updateProgress(current, total) {
         if (s < current) d.classList.add('done');
         else if (s === current) d.classList.add('current');
     });
-    const labels = ['', '数字化现状', '核心痛点', '投入意愿', '时间规划', '采购决策', '技术人才'];
+    const labels = ['', '数字化现状', '核心痛点', '投入意愿', '时间规划', '采购决策'];
     if (current === 0) {
-        $('#progressLabel').textContent = `基本信息 · 共 ${total} 题`;
+        $('#progressLabel').textContent = '基本信息 · AI 调研共 5 题';
     } else {
-        $('#progressLabel').textContent = `${current}/${total} · ${labels[current] || ''}`;
+        $('#progressLabel').textContent = `${current} / ${total} · ${labels[current] || ''}`;
     }
 }
 
 // ==================== 开始调研 ====================
 async function startSurvey() {
-    const name = $('#name').value.trim(), company = $('#company').value.trim(), position = $('#position').value.trim();
+    const name = $('#name').value.trim();
+    const company = $('#company').value.trim();
+    const position = $('#position').value.trim();
+    const contact = $('#contact').value.trim();
+
     if (!name) { toast('请输入您的姓名'); return; }
     if (!company) { toast('请输入所属企业'); return; }
     if (!position) { toast('请输入负责岗位'); return; }
+    if (!contact) { toast('请输入联系方式'); return; }
 
-    const btn = $('#btnStart'); btn.disabled = true; btn.textContent = '正在生成题目...';
-    showLoading('AI 正在为您定制问卷题目...');
+    const btn = $('#btnStart');
+    btn.disabled = true;
+    btn.textContent = 'AI 生成中...';
+
+    // 智能加载提示
+    const loadingMessages = [
+        '正在分析企业画像...',
+        '结合行业特点定制问题...',
+        '生成专属调研问卷...'
+    ];
+    let msgIdx = 0;
+    showLoading(loadingMessages[0]);
+    const msgTimer = setInterval(() => {
+        msgIdx = (msgIdx + 1) % loadingMessages.length;
+        $('#loadingText').textContent = loadingMessages[msgIdx];
+    }, 1500);
 
     try {
-        const resp = await fetch(API_BASE + '/session/start', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, company, position }) });
+        const resp = await fetch(API_BASE + '/session/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, company, position, contact })
+        });
+
+        clearInterval(msgTimer);
+
         if (!resp.ok) { const err = await resp.json(); throw new Error(err.detail || '请求失败'); }
         const data = await resp.json();
         sessionId = data.session_id;
@@ -121,8 +144,11 @@ async function startSurvey() {
         updateProgress(data.question_number);
         hideLoading();
     } catch (err) {
-        hideLoading(); toast('初始化失败：' + err.message);
-        btn.disabled = false; btn.textContent = '开始答题 →';
+        clearInterval(msgTimer);
+        hideLoading();
+        toast('初始化失败：' + err.message);
+        btn.disabled = false;
+        btn.textContent = 'AI 生成专属问卷 →';
     }
 }
 
@@ -130,7 +156,7 @@ async function startSurvey() {
 function renderChoice(qNum, question, options, isLast) {
     currentQNum = qNum; currentQText = question; selectedOption = null;
 
-    $('#choiceBadge').textContent = `📋 第 ${qNum} 题 / 共 ${TOTAL_QUESTIONS} 题`;
+    $('#choiceBadge').textContent = '📋 第 ' + qNum + ' 题 / 共 ' + TOTAL_QUESTIONS + ' 题';
     $('#choiceTitle').textContent = question;
 
     $('#optionsList').innerHTML = options.map((opt, idx) => {
@@ -161,7 +187,7 @@ async function submitChoice() {
     if (!selectedOption) { toast('请先选择一个选项'); return; }
     const btn = $('#btnSubmit'); btn.disabled = true; btn.textContent = '提交中...';
 
-    if (currentQNum >= TOTAL_QUESTIONS) showLoading('AI 正在分析您的全部回答...');
+    if (currentQNum >= TOTAL_QUESTIONS) showLoading('AI 正在深度分析您的回答...');
 
     try {
         const resp = await fetch(API_BASE + '/session/answer', {
@@ -188,35 +214,77 @@ async function submitChoice() {
 
 // ==================== 完成页 ====================
 function renderComplete(data) {
-    // 线索评级
+    // 线索评级徽章
     const lvl = data.lead_level || '普通';
     const score = data.lead_score || 50;
     const colors = { '高优': '#dc2626', '中优': '#d97706', '普通': '#64748b' };
+    const emojis = { '高优': '🔥', '中优': '⭐', '普通': '📋' };
     const color = colors[lvl] || '#64748b';
-    $('#leadBadge').style.background = color;
-    $('#leadBadge').textContent = `🎯 线索: ${lvl} · ${score}分`;
+    const emoji = emojis[lvl] || '📋';
+
+    const badge = $('#leadBadge');
+    badge.style.background = color;
+    badge.innerHTML = `${emoji} 线索评级：<strong>${lvl}</strong> · ${score} 分`;
 
     // 问答回顾
-    if (data.qa_list?.length) {
-        const html = data.qa_list.map(q => `<div class="qa-row"><div class="q">Q${q.question_number}: ${esc(q.question)}</div><div class="a">👉 ${esc(q.answer)}</div></div>`).join('');
-        $('#qaReview').innerHTML = `<h4>📋 您的回答</h4><div class="qa-list">${html}</div>`;
+    if (data.qa_list && data.qa_list.length) {
+        const html = data.qa_list.map(q => `<div class="qa-row">
+            <div class="qa-q">Q${q.question_number}: ${esc(q.question)}</div>
+            <div class="qa-a">👉 ${esc(q.answer)}</div>
+        </div>`).join('');
+        $('#qaReview').innerHTML = '<h4 class="block-title">📋 您的回答回顾</h4><div class="qa-list">' + html + '</div>';
     }
 
-    // 企业画像
+    // 企业画像分析
     const painHtml = (data.pain_points || []).map(p => `<span class="pain-tag">${esc(p)}</span>`).join('');
     $('#analysisSummary').innerHTML = `
-        <div class="text">${esc(data.summary || '分析完成')}</div>
-        ${painHtml ? '<div class="pain-tags">'+painHtml+'</div>' : ''}
-        ${data.follow_up_advice ? '<div class="advice">📝 '+esc(data.follow_up_advice)+'</div>' : ''}
+        <h4 class="block-title">📊 AI 企业画像分析</h4>
+        <p class="analysis-text">${esc(data.summary || '分析完成')}</p>
+        ${painHtml ? '<div class="pain-tags">' + painHtml + '</div>' : ''}
+        ${data.follow_up_advice ? '<div class="advice">📝 ' + esc(data.follow_up_advice) + '</div>' : ''}
     `;
 
-    // 洞察
-    if (data.insights?.length) {
+    // 洞察与建议
+    if (data.insights && data.insights.length) {
         const icons = ['💡', '🔍', '📌', '🎯', '✨', '📊', '⚡', '🔥'];
-        const items = data.insights.map((t, i) => `<div class="insight-row"><span class="dot">${icons[i % icons.length]}</span><span>${esc(t)}</span></div>`).join('');
-        $('#insightList').innerHTML = `<h4>🔎 关键洞察与建议</h4>${items}`;
+        const items = data.insights.map((t, i) => `<div class="insight-row">
+            <span class="dot">${icons[i % icons.length]}</span>
+            <span>${esc(t)}</span>
+        </div>`).join('');
+        $('#insightList').innerHTML = '<h4 class="block-title">🔎 关键洞察与建议</h4>' + items;
+    } else {
+        $('#insightList').innerHTML = '';
     }
 }
 
+// ==================== 二维码弹窗 ====================
+function showQRCode() {
+    const url = location.origin + '/';
+    const qrUrl = API_BASE + '/qrcode?url=' + encodeURIComponent(url);
+    $('#qrcodeImg').src = qrUrl;
+    $('#qrcodeUrl').textContent = url;
+    $('#qrcodeModal').classList.add('show');
+}
+
+function closeQRCode() {
+    $('#qrcodeModal').classList.remove('show');
+}
+
+// 点击遮罩关闭
+$('#qrcodeModal').addEventListener('click', function(e) {
+    if (e.target === this) closeQRCode();
+});
+
 // ==================== 初始化 ====================
 updateProgress(0);
+
+// 键盘支持：回车键在表单中跳转
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && document.activeElement && document.activeElement.tagName === 'INPUT') {
+        const activeId = document.activeElement.id;
+        if (activeId === 'name') { $('#company').focus(); e.preventDefault(); }
+        else if (activeId === 'company') { $('#position').focus(); e.preventDefault(); }
+        else if (activeId === 'position') { $('#contact').focus(); e.preventDefault(); }
+        else if (activeId === 'contact') { $('#btnStart').click(); e.preventDefault(); }
+    }
+});

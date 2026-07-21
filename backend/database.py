@@ -27,6 +27,7 @@ async def init_db():
                 name TEXT NOT NULL,
                 company TEXT NOT NULL,
                 position TEXT NOT NULL,
+                contact TEXT NOT NULL DEFAULT '',
                 qa_history TEXT NOT NULL DEFAULT '[]',
                 analysis_summary TEXT,
                 analysis_insights TEXT,
@@ -41,7 +42,6 @@ async def init_db():
                 completed_at TEXT
             )
         """)
-        # 兼容旧表结构，动态添加缺失的列
         await _migrate_columns(db)
         await db.commit()
     finally:
@@ -53,6 +53,7 @@ async def _migrate_columns(db: aiosqlite.Connection):
     existing = await db.execute("PRAGMA table_info(surveys)")
     cols = {row["name"] for row in await existing.fetchall()}
     new_cols = {
+        "contact": "TEXT NOT NULL DEFAULT ''",
         "pain_points": "TEXT DEFAULT '[]'",
         "follow_up_advice": "TEXT DEFAULT ''",
         "lead_level": "TEXT DEFAULT '普通'",
@@ -65,14 +66,14 @@ async def _migrate_columns(db: aiosqlite.Connection):
             await db.execute(f"ALTER TABLE surveys ADD COLUMN {col} {col_def}")
 
 
-async def save_user_info(session_id: str, name: str, company: str, position: str):
+async def save_user_info(session_id: str, name: str, company: str, position: str, contact: str = ""):
     """保存用户基本信息"""
     db = await get_db()
     try:
         await db.execute(
-            """INSERT INTO surveys (session_id, name, company, position, created_at)
-               VALUES (?, ?, ?, ?, ?)""",
-            (session_id, name, company, position, datetime.now().isoformat())
+            """INSERT INTO surveys (session_id, name, company, position, contact, created_at)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (session_id, name, company, position, contact, datetime.now().isoformat())
         )
         await db.commit()
     finally:
@@ -125,12 +126,17 @@ async def get_user_info(session_id: str) -> dict | None:
     db = await get_db()
     try:
         row = await db.execute(
-            "SELECT name, company, position FROM surveys WHERE session_id = ?",
+            "SELECT name, company, position, contact FROM surveys WHERE session_id = ?",
             (session_id,)
         )
         result = await row.fetchone()
         if result:
-            return {"name": result["name"], "company": result["company"], "position": result["position"]}
+            return {
+                "name": result["name"],
+                "company": result["company"],
+                "position": result["position"],
+                "contact": result["contact"] or ""
+            }
         return None
     finally:
         await db.close()
@@ -236,7 +242,7 @@ async def export_surveys_csv() -> str:
     db = await get_db()
     try:
         rows = await db.execute(
-            """SELECT name, company, position, qa_history, analysis_summary,
+            """SELECT name, company, position, contact, qa_history, analysis_summary,
                       pain_points, follow_up_advice, lead_level, lead_score,
                       follow_status, is_completed, created_at, completed_at
                FROM surveys ORDER BY created_at DESC"""
@@ -244,13 +250,12 @@ async def export_surveys_csv() -> str:
         results = await rows.fetchall()
 
         headers = [
-            "姓名", "企业", "岗位", "线索等级", "评分",
+            "姓名", "企业", "岗位", "联系方式", "线索等级", "评分",
             "问卷答案", "分析摘要", "痛点", "跟进建议",
             "跟进状态", "是否完成", "创建时间", "完成时间"
         ]
 
         def csv_escape(val):
-            """CSV 转义"""
             s = str(val or "").replace('"', '""')
             return f'"{s}"'
 
@@ -260,7 +265,6 @@ async def export_surveys_csv() -> str:
 
         for r in results:
             d = dict(r)
-            # 格式化问答
             qa_str = ""
             try:
                 qa_list = json.loads(d.get("qa_history", "[]"))
@@ -271,7 +275,6 @@ async def export_surveys_csv() -> str:
             except (json.JSONDecodeError, KeyError):
                 qa_str = d.get("qa_history", "")
 
-            # 格式化痛点
             pain_str = ""
             try:
                 pain_list = json.loads(d.get("pain_points", "[]"))
@@ -283,6 +286,7 @@ async def export_surveys_csv() -> str:
                 d.get("name", ""),
                 d.get("company", ""),
                 d.get("position", ""),
+                d.get("contact", ""),
                 d.get("lead_level", ""),
                 d.get("lead_score", ""),
                 qa_str,
