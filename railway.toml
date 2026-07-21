@@ -1,0 +1,11 @@
+[build]
+  builder = "nixpacks"
+  [build.nixpacks]
+    # Python 项目在 backend/ 子目录中
+    providers = ["python"]
+    installCommand = "pip install -r backend/requirements.txt"
+    buildCommand = ""
+    startCommand = "cd backend && uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000}"
+
+[deploy]
+  startCommand = "cd backend && uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000}"
