@@ -82,7 +82,10 @@ q3 = """
 mutation ($input: DeploymentTriggerCreateInput!) {
   deploymentTriggerCreate(input: $input) {
     id
-    status
+    deployment {
+      id
+      status
+    }
   }
 }
 """
@@ -93,8 +96,10 @@ data = gql(q3, {
     }
 }, "Deploy")
 dep = data.get("deploymentTriggerCreate", {})
-print(f"  部署ID: {dep.get('id','?')}")
-print(f"  状态: {dep.get('status','?')}")
+dep_id = dep.get("id", "?")
+dep_status = dep.get("deployment", {}).get("status", "?")
+print(f"  部署触发ID: {dep_id}")
+print(f"  部署状态: {dep_status}")
 
 # ========================================================
 # Step 4: 查询域名
